@@ -9,7 +9,7 @@ compatibility: opencode
 
 ## Purpose
 
-RegionSnip is a Windows screenshot capture utility written in C# that provides both programmatic full-screen capture and interactive region selection. It supports PNG and JPEG formats, with options for quality compression and image scaling to optimize file size.
+RegionSnip is a Windows screenshot capture utility written in C# that provides both programmatic full-screen capture and interactive region selection. It supports JPEG formats, with options for quality compression and image scaling to optimize file size.
 
 ## Usage
 
@@ -125,5 +125,5 @@ RegionSnip outputs JSON to stdout with the following structure:
 - Always check the `ok` field in the response
 - For region selection, users can cancel the operation (results in `cancelled: true`)
 - Common errors include invalid monitor indices, permission issues, or timeout
-- Screenshots are saved as PNG/JPEG files to the specified path
+- Screenshots are saved as JPEG files to the specified path
 - Base64 image data is included when `includeImage=true` for further processing

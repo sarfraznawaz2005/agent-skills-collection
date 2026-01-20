@@ -59,7 +59,7 @@ Create a powershell script that will actually create scheduled task in Windows T
 ```
 $action = New-ScheduledTaskAction `
  -Execute "powershell.exe" `
- -Argument "-ExecutionPolicy Bypass -File [full path to agent.ps1] -prompt \"Pickup your friend\" -taskname \"Agent Tasks - PickupFriend\" -delete 1"
+ -Argument "-ExecutionPolicy Bypass -File \"[full path to agent.ps1]\" -prompt \"Pickup your friend\" -taskname \"Agent Tasks - PickupFriend\" -delete 1"
 
 $trigger = New-ScheduledTaskTrigger `
  -Once `
@@ -86,6 +86,8 @@ Above powershell snippet is just an example to give you idea but actual script c
 - Make sure to always add `Agent Tasks` prefix to all created jobs as shown in example earlier. So `TaskName` must always be like `Agent Tasks - [actual title here]`.
 - The `delete` argument to `agent.ps1` script would be `1` if job is NOT recurring and `0` if job is recurring.
 - We must always pass `prompt`, `taskname` and `delete` param to `agent.ps1` script.
+- Always convert multi-line prompt to single line so it works as commandline argument for Windows Task Scheduler. Replace new lines with literal `\n` identifiers.
+- Always always use doube quotes for params/arguments of powershell or agent.ps1 scripts as in `powershell.exe -ExecutionPolicy Bypass -File "full\path\to\agent.ps1" -prompt "Reminder: pickup my friend at 11:00AM"`. For `delete`, keep it without any quotes as in `delete 1`.
 
 ### Step 4: Execute Powershell Script
 

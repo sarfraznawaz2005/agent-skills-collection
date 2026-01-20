@@ -77,7 +77,7 @@ Above powershell snippet is just an example to give you idea but actual script c
 
 **Critical Rules You Must Follow Always:**
 - The scheduled task should run only when user is logged in.
-- Correct full path to `agent.ps1` script must be used.
+- Correct full path to `agent.ps1` script must be used. First ensure file exists at path and use that path.
 - This powershell script for creating scheduled task must be created in system's TEMP (eg `C:\Users\USER\AppData\Local\Temp\`) folder only and executed from there. 
 - This powershell script must be executable by you in non-privileged manner.
 - Never use `-RunLevel Highest` in script.

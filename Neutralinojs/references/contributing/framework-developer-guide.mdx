@@ -1,0 +1,311 @@
+---
+title: Framework Developer Guide
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+Great open-source software is a result of the collaboration of enthusiastic developers.
+Anyone can help Neutralino by contributing code and reporting bugs. This document explains how to
+start contributing Neutralinojs.
+
+Note that this guide is for framework developers. If you are getting started with Neutralinojs app development,
+you can start from [here](../getting-started/your-first-neutralinojs-app.mdx).
+
+## Setup and build the framework
+
+### Cloning the repository
+
+First, clone the main repository.
+
+```bash
+git clone https://github.com/neutralinojs/neutralinojs.git
+cd neutralinojs
+```
+
+### Installing compilation tools and dependencies
+
+#### Linux
+
+No need for separate compilers because Linux distributions usually have GNU C/C++ compilers installed already.
+
+Install GTK, WebKit, CMake, Ninja, other libraries with the following command.
+
+##### Debian
+
+```bash
+sudo apt install libgtk-3-dev cmake ninja-build
+```
+
+```bash
+sudo apt install libwebkit2gtk-4.1-0
+# --- or ---
+sudo apt install libwebkit2gtk-4.0-37
+```
+
+##### Fedora
+
+```bash
+sudo dnf install \
+    @development-tools \
+    gtk3 \
+    webkit2gtk3.x86_64 \
+    webkit2gtk3-devel.x86_64 \
+    libgtk-3-dev \
+    libwebkit2gtk-4.1-0 \ # or libwebkit2gtk-4.0-37
+    libglib2.0-dev \
+    libxrandr-dev \
+    cmake \
+    ninja-build
+```
+
+##### Arch
+
+```bash
+sudo pacman -S \
+    gtk3 \
+    webkit2gtk \
+    cmake \
+    ninja
+```
+
+#### Windows
+
+Install Visual Studio Build Tools or the Visual Studio IDE with the Windows SDK. The compilation process uses the MSVC C++ compiler (aka `cl.exe`) and requires [CMake](https://cmake.org/download/) (as the build system generator) and [Ninja](https://ninja-build.org/) (as the build executor).
+
+:::info
+How to activate Windows 10 SDK: While installing it in the Visual Studio Installer, go to tab Workloads, section "Desktop & Mobile" and select "Desktop development with C++". On the right in "Installation details" > "Desktop development with C++" > "Optional", make sure "Windows 10 SDK" is checked.
+:::
+
+#### macOS
+
+Install Xcode Command Line Tools.
+
+CMake and Ninja are also required and can be installed via Homebrew:
+
+```bash
+brew install cmake ninja
+```
+
+### Compile the Neutralinojs framework.
+
+Run the following script in order to build the framework binaries.
+
+1. Create a `build/` directory in the main repository.
+
+<Tabs
+  defaultValue="Linux"
+  values={[
+    {label: 'Linux', value: 'Linux'},
+    {label: 'macOS', value: 'macOS'},
+    {label: 'Windows', value: 'Windows'},
+  ]}>
+  <TabItem value="Linux">
+
+```bash
+mkdir build
+```
+
+  </TabItem>
+  <TabItem value="macOS">
+
+```bash
+mkdir -p build
+```
+
+  </TabItem>
+  <TabItem value="Windows">
+
+```bash
+mkdir build
+```
+
+  </TabItem>
+</Tabs>
+
+2. Generate Ninja build files.
+
+<Tabs
+  defaultValue="Linux"
+  values={[
+    {label: 'Linux', value: 'Linux'},
+    {label: 'macOS', value: 'macOS'},
+    {label: 'Windows', value: 'Windows'},
+  ]}>
+  <TabItem value="Linux">
+
+```bash
+cmake . -G Ninja -B build
+
+# --- Cross compile for ARM64 (optional) ---
+cmake . -G Ninja -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/linux-aarch64.cmake
+
+# --- Cross compile for ARM32 (optional) ---
+cmake . -G Ninja -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/linux-armhf.cmake
+```
+
+  </TabItem>
+  <TabItem value="macOS">
+
+```bash
+cmake . -G Ninja -B build
+```
+
+  </TabItem>
+  <TabItem value="Windows">
+
+```bash
+cmake . -G Ninja -B build
+```
+
+  </TabItem>
+</Tabs>
+
+3. Compile the project.
+
+```bash
+ninja -C build
+```
+
+This project uses CMake and Ninja to configure and build native binaries for local development and CI/CD environments. Developers can provide custom toolchains or platform-specific configurations to target additional platforms.
+
+## Setup and build the client
+
+Neutralinojs apps communicate with the Neutralinojs process via a WebSocket connection. This WebSocket connection
+gets initiated by the Neutralinojs client.
+
+Clone the client repository to the same directory where you downloaded the main repository.
+
+```bash
+git clone https://github.com/neutralinojs/neutralino.js.git
+cd neutralino.js
+```
+
+Install developer dependencies.
+
+```bash
+npm install
+```
+
+## Executing the test app
+
+The main repository has a simple test application that you can use during development related activities.
+You can enter the following command from the main repository to build and update the test app's client.
+
+```bash
+bash ./scripts/update_client.sh
+```
+
+Now run the newly compiled test app with the following command.
+
+<Tabs
+  defaultValue="Linux"
+  values={[
+    {label: 'Linux', value: 'Linux'},
+    {label: 'macOS', value: 'macOS'},
+    {label: 'Windows', value: 'Windows'},
+  ]}>
+  <TabItem value="Linux">
+
+```bash
+./bin/neutralino-linux_x64 --load-dir-res
+```
+
+  </TabItem>
+  <TabItem value="macOS">
+
+```bash
+# For Intel processors (x64)
+./bin/neutralino-mac_x64 --load-dir-res
+
+# For new Apple processors (arm64)
+./bin/neutralino-mac_arm64 --load-dir-res
+```
+
+  </TabItem>
+  <TabItem value="Windows">
+
+```bash
+./bin/neutralino-win_x64.exe --load-dir-res
+```
+
+  </TabItem>
+</Tabs>
+
+## Testing
+
+Testing is a crucial part in every development activity. Every pull request in the main codebase will trigger
+the following automated tests.
+
+- Builds on Linux, macOS, and Windows with x64 machines.
+- Integration test suite.
+
+However, you can run our integration test suite from your local computer too with the following command
+from the main codebase's directory.
+
+```bash
+cd spec
+npm install
+npm run test
+```
+
+It's always good to run the test suite for the module you've updated with the following command.
+
+```bash
+npm run test <module> # Eg: npm run test filesystem
+```
+
+:::info
+If you need to run tests for the `extensions` module, make sure to enter `npm install` from
+`./bin/extensions/sampleextension` first.
+:::
+
+The above command will run test only for the given module.
+
+### Adding a new test case
+
+To add a test case simply add it to the `spec/<module>.spec.js` file.
+For example, if you need to add a new test case to the `debug` module, add the test case to the `spec/debug.spec.js` file. 
+
+Next, run the test suite for that specific module, as shown in the following command snippet:
+
+```bash
+cd spec
+npm i 
+npm run test debug
+```
+
+## Project directory structure
+
+### Framework
+
+Source: [github.com/neutralinojs/neutralinojs](https://github.com/neutralinojs/neutralinojs)
+
+- `api`: The native API implementation and controllers. Written in REST API style.
+- `auth`: Authentication and permissions-related logic.
+- `bin`: Test app source code.
+- `lib`: Third-party libraries source files.
+- `server`: WebSocket/HTTP communication endpoints.
+- `spec`: Integration/API test suite.
+- `scripts`: Contains automation scripts to build the framework, generate release notes, update the client library, and build `resources.neu` for the test app.
+
+### Client library
+
+Source: [github.com/neutralinojs/neutralino.js](https://github.com/neutralinojs/neutralino.js)
+
+- `src/api`: JavaScript API frontend and implementaion.
+- `src/browser`: Browser-related API implementation.
+- `src/ws`: WebSocket client implementaion.
+- `scripts`: Contains automation scripts to generate release notes.
+
+## Contribution guidelines
+
+Before, contributing to the codebase, please check the following things.
+
+- Discuss the feature/improvement/bug-fix with the Neutralinojs team via GitHub discussions.
+- Get familiar with the code style. Write your code according to the
+  [Neutralinojs code style guide](code-style-guide.md).
+- Become familiar with all modules in the codebase.
+- Avoid adding new features to only one platform.
+
+Thanks for helping us to make Neutralinojs better!

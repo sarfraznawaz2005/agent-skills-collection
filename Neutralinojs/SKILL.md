@@ -13,6 +13,13 @@ references:
 
 Consolidated skill for building cross-platform desktop applications with Neutralino.js. Use decision trees below to find the right APIs and configuration options, then load detailed references.
 
+## When to Apply
+
+- Building desktop utilities with file system operations
+- Executing system commands or managing processes
+- Creating apps with tray icons, notifications, or clipboard integration
+- Accessing system information (CPU, memory, displays)
+
 ## Critical Rules
 
 **Follow these rules in all Neutralino.js code:**
@@ -23,6 +30,44 @@ Consolidated skill for building cross-platform desktop applications with Neutral
 4. **Configure `nativeAllowList` and `nativeBlockList`** to restrict API access and enhance security.
 5. **Call `Neutralino.init()`** before using any native API methods.
 6. **Handle window close events** properly using `events.on('windowClose')` - never rely solely on the close button.
+7. **Initialize First**: Call `Neutralino.init()` before any native API usage, see below:
+
+```javascript
+// WRONG - calling APIs before initialization
+await Neutralino.os.getEnv('USER');
+
+// RIGHT - initialize then use APIs
+Neutralino.init();
+await Neutralino.os.getEnv('USER');
+```
+
+**Handle Window Close**: Always implement windowClose handler to prevent hanging processes
+
+```javascript
+// WRONG - missing exit handler
+Neutralino.init();
+
+// RIGHT - proper cleanup on window close
+Neutralino.init();
+Neutralino.events.on("windowClose", () => {
+  Neutralino.app.exit();
+});
+```
+
+**Error Code Patterns**: Native API errors use specific codes (`NE_FS_*`, `NE_OS_*`, `NE_RT_*`)
+
+```javascript
+// Check for specific filesystem errors
+try {
+  await Neutralino.filesystem.readFile('./config.txt');
+} catch(err) {
+  if (err.code === 'NE_FS_NOPATHE') {
+    // File doesn't exist
+  } else if (err.code === 'NE_FS_FILRDER') {
+    // File read error
+  }
+}
+```
 
 ## How to Use This Skill
 
@@ -288,6 +333,144 @@ Frontend integration?
 | Concept | Entry File | Description |
 |---------|------------|-------------|
 | Distribution | `./references/distribution/overview.md` | Building and distributing apps |
+
+## Key Patterns
+
+### File Operations
+
+```javascript
+// Read/write text files
+let content = await Neutralino.filesystem.readFile('./data.txt');
+await Neutralino.filesystem.writeFile('./output.txt', 'Hello World');
+
+// Binary file operations
+let buffer = await Neutralino.filesystem.readBinaryFile('./image.png');
+let rawBin = new ArrayBuffer(1);
+let view = new Uint8Array(rawBin);
+view[0] = 64;
+await Neutralino.filesystem.writeBinaryFile('./data.bin', rawBin);
+
+// File stats and existence check
+try {
+  let stats = await Neutralino.filesystem.getStats('./file.txt');
+  console.log(`Size: ${stats.size}, IsFile: ${stats.isFile}`);
+} catch(err) {
+  if (err.code === 'NE_FS_NOPATHE') {
+    console.log('File does not exist');
+  }
+}
+```
+
+### Process Management
+
+```javascript
+// Execute command and get output
+let result = await Neutralino.os.execCommand('python --version');
+console.log(result.stdOut);
+
+// Spawn background process with event monitoring
+let proc = await Neutralino.os.spawnProcess('ping google.com');
+
+Neutralino.events.on('spawnedProcess', (evt) => {
+  if (proc.id === evt.detail.id) {
+    switch(evt.detail.action) {
+      case 'stdOut':
+        console.log(evt.detail.data);
+        break;
+      case 'stdErr':
+        console.error(evt.detail.data);
+        break;
+      case 'exit':
+        console.log(`Exit code: ${evt.detail.data}`);
+        break;
+    }
+  }
+});
+
+// Send input to spawned process
+await Neutralino.os.updateSpawnedProcess(proc.id, 'stdIn', 'input data');
+await Neutralino.os.updateSpawnedProcess(proc.id, 'stdInEnd');
+```
+
+### System Tray Integration
+
+```javascript
+// Set up tray with menu
+let tray = {
+  icon: '/resources/icons/tray.png',
+  menuItems: [
+    {id: "show", text: "Show Window"},
+    {text: "-"}, // Separator
+    {id: "quit", text: "Quit"}
+  ]
+};
+
+await Neutralino.os.setTray(tray);
+
+// Handle tray menu clicks
+Neutralino.events.on('trayMenuItemClicked', (evt) => {
+  switch(evt.detail.id) {
+    case 'show':
+      // Show window logic
+      break;
+    case 'quit':
+      Neutralino.app.exit();
+      break;
+  }
+});
+```
+
+### Clipboard Operations
+
+```javascript
+// Text clipboard
+await Neutralino.clipboard.writeText('Hello World');
+let text = await Neutralino.clipboard.readText();
+
+// HTML clipboard
+await Neutralino.clipboard.writeHTML('<p style="color:red;">Formatted</p>');
+let html = await Neutralino.clipboard.readHTML();
+
+// Check clipboard format
+let format = await Neutralino.clipboard.getFormat();
+```
+
+### System Information
+
+```javascript
+// CPU information
+let cpu = await Neutralino.computer.getCPUInfo();
+console.log(`CPU: ${cpu.model}, Cores: ${cpu.physicalCores}`);
+
+// Display information
+let displays = await Neutralino.computer.getDisplays();
+displays.forEach(display => {
+  console.log(`Display ${display.id}: ${display.resolution.width}x${display.resolution.height}`);
+});
+
+// Architecture and OS
+let arch = await Neutralino.computer.getArch();
+let username = await Neutralino.os.getEnv(NL_OS === 'Windows' ? 'USERNAME' : 'USER');
+```
+
+### Notifications
+
+```javascript
+// Basic notification
+await Neutralino.os.showNotification('Title', 'Message content');
+
+// Notification with icon type
+await Neutralino.os.showNotification('Error', 'Something went wrong', 'ERROR');
+// Icon types: INFO, WARNING, ERROR, QUESTION
+```
+
+## Common Mistakes
+
+- **Missing `await` on async calls** — All native APIs return promises
+- **Not checking file existence** — Use `getStats()` to verify files exist before operations
+- **Forgetting process cleanup** — Always handle spawned process exit events
+- **Invalid tray icon paths** — Use `/resources/` prefix for bundled assets
+- **Missing error handling** — Wrap native API calls in try-catch blocks
 
 ## Resources
 
